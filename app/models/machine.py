@@ -1,5 +1,6 @@
 from app.models.node import Node, NodeType, State
 from app.models.game import Game
+from app.models.match import Turn
 from app.utils.constants import *
 import math
 
@@ -26,7 +27,7 @@ class Machine:
         )
 
         root = Node(
-            type=NodeType.MAX if match._turn_name == "COMPUTER" else NodeType.MIN,
+            type=NodeType.MAX if match._turn == Turn.COMPUTER else NodeType.MIN,
             parent=None,
             state=state,
             depth=0,
@@ -56,6 +57,7 @@ class Machine:
         return best_move
     
     def _max_value(self, node:Node, alpha, beta):
+
         v = -math.inf
         for child in self.game.operators(node):
             v = max(v, self._min_value(child, alpha, beta))
@@ -65,7 +67,8 @@ class Machine:
         return v
     
     def _min_value(self, node:Node, alpha, beta):
-        v = -math.inf
+
+        v = math.inf
         for child in self.game.operators(node):
             v = min(v, self._max_value(child, alpha, beta))
             if v <= alpha:

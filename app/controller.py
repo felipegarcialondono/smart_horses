@@ -2,8 +2,11 @@
 import tkinter as tk
 from app.views.home_view import HomeView
 from app.views.game_view import GameView
-from app.models.match import Match
+from app.models.match import Match, Turn
 from app.models.machine import Machine
+from app.utils.constants import AMATEUR
+import threading
+
 
 class Controller:
     def __init__(self):
@@ -32,6 +35,19 @@ class Controller:
 
     def start_game(self):
         self.show_view("game")
+
+        if self.model._turn == Turn.COMPUTER:
+            t = threading.Thread(target=self._apply_machineM, daemon=True)
+            t.start()
+
+    def _apply_machineM(self):
+        move = self.machine.choose_game(self.model)
+        
+        def apply_move():
+            if move is not None:
+                self.model.play_turn(move)
+                self.views["game"].draw_board()
+        self.root.after(0, apply_move)
 
     def reset_game(self):
         self.model = Match()

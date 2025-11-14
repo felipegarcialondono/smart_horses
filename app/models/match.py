@@ -142,7 +142,7 @@ class Match():
     
     @property
     def computer_points(self):
-        return self.computer_points
+        return self._computer_points
     
     @property
     def player_points(self):
@@ -150,11 +150,11 @@ class Match():
     
     @property
     def computer_pos(self):
-        return self.computer_pos
+        return self._computer_pos
     
     @property
     def player_pos(self):
-        return self.player_pos
+        return self._player_pos
     
     @property
     def turn(self):
