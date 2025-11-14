@@ -60,18 +60,12 @@ class Machine:
 
         v = -math.inf
         for child in self.game.operators(node):
-            v = max(v, self._min_value(child, alpha, beta))
-            if v >= beta:
-                return v
-            alpha = max(alpha,v)
+            v = max(v, self._min_value(child))
         return v
     
     def _min_value(self, node:Node, alpha, beta):
 
         v = math.inf
         for child in self.game.operators(node):
-            v = min(v, self._max_value(child, alpha, beta))
-            if v <= alpha:
-                return v
-            beta = min(beta, v)
+            v = min(v, self._max_value(child))
         return v
