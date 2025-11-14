@@ -44,18 +44,18 @@ class Game():
                     parent=node,
                     state=new_state,
                     depth=node.depth + 1,
-                    utility=self._utility(state),
+                    utility=self._utility(new_state),
                 )
 
                 next_nodes.append(new_node)
         
         return next_nodes
 
-    def is_terminal(self, node: Node, max_depht: int = 6) -> bool:
+    def is_terminal(self, node: Node, max_depth: int = 6) -> bool:
         """
         No puede haber más movimientos o alcanza maxima profuniddad la máquina
         """
-        if node.depth >= max_depht:
+        if node.depth >= max_depth:
             return True
         
         pos = node.state.pos_max if node.type == NodeType.MAX else node.state.pos_min
@@ -69,4 +69,75 @@ class Game():
         return True
 
     def _utility(self, state):
-        return state.pts_max - state.pts_min
+        # Pesos (se pueden modificar para cambiar la "personalidad" de la IA)
+        W_SCORE = 1.0
+        W_POTENTIAL = 0.5  # Menos importante que el score actual
+        W_MOVILITY = 0.1  # Menos importante que el score
+        
+        # Componente 1: Puntuación Actual
+        C1 = state.pts_max - state.pts_min
+        
+        # Componente 2: Potencial de Puntuación
+        machine_potential = 0
+        human_potential = 0
+        
+        for square_pos, points in state.special_squares.items():
+            # Verificar si la casilla está activa (no destruida)
+            if square_pos not in state.destroyed_squares:
+                # Verificar si la máquina puede saltar a esta casilla
+                if self._can_jump_to(state.pos_max, square_pos, state.destroyed_squares):
+                    if points > 0:
+                        machine_potential += points
+                
+                # Verificar si el humano puede saltar a esta casilla
+                if self._can_jump_to(state.pos_min, square_pos, state.destroyed_squares):
+                    if points > 0:
+                        human_potential += points
+        
+        C2 = machine_potential - human_potential
+        
+        # Componente 3: Movilidad
+        machine_moves = self._count_valid_moves(state.pos_max, state.destroyed_squares)
+        human_moves = self._count_valid_moves(state.pos_min, state.destroyed_squares)
+        C3 = machine_moves - human_moves
+        
+        # Resultado Final
+        total_heuristic = (W_SCORE * C1) + (W_POTENTIAL * C2) + (W_MOVILITY * C3)
+        
+        return int(total_heuristic)
+    
+    def _can_jump_to(self, from_pos, to_pos, destroyed_squares):
+        """Verifica si desde from_pos se puede hacer un movimiento de caballo válido a to_pos"""
+        from_i, from_j = from_pos
+        to_i, to_j = to_pos
+        
+        # Calcular el delta del movimiento
+        delta = (to_i - from_i, to_j - from_j)
+        
+        # Verificar si es un movimiento válido de caballo
+        if delta not in KNIGHT_MOVES:
+            return False
+        
+        # Verificar que la casilla destino no esté destruida
+        if to_pos in destroyed_squares:
+            return False
+        
+        # Verificar que esté dentro de los límites del tablero
+        if not (0 <= to_i < ROWS and 0 <= to_j < COLS):
+            return False
+        
+        return True
+    
+    def _count_valid_moves(self, pos, destroyed_squares):
+        """Cuenta cuántos movimientos válidos hay desde una posición"""
+        i, j = pos
+        count = 0
+        
+        for (di, dj) in KNIGHT_MOVES:
+            new_i, new_j = i + di, j + dj
+            
+            # Verificar que esté dentro de los límites y no esté destruida
+            if 0 <= new_i < ROWS and 0 <= new_j < COLS and (new_i, new_j) not in destroyed_squares:
+                count += 1
+        
+        return count
