@@ -3,14 +3,16 @@ import tkinter as tk
 from app.views.home_view import HomeView
 from app.views.game_view import GameView
 from app.models.match import Match
+from app.models.machine import Machine
 
 class Controller:
     def __init__(self):
-        self.root = tk.Tk()
+        self.root = tk.Tk() 
         self.root.title("Smart horses")
         self.root.geometry("1000x700")
 
         self.model = Match()
+        self.machine = Machine(difficulty=AMATEUR)
 
         # Diccionario de vistas
         self.views = {
