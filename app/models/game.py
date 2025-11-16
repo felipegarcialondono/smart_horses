@@ -23,12 +23,8 @@ class Game():
         for (di, dj) in KNIGHT_MOVES:
             new_i, new_j = i + di, j + dj
 
-            print(new_i, new_j)
-
-            if 0 <= new_i <= BOARD_COLS and 0 <= new_j <= BOARD_ROWS and (new_i, new_j) not in destroyed_squares:
+            if 0 <= new_i < ROWS and 0 <= new_j < COLS and (new_i, new_j) not in destroyed_squares:
                 new_pos = (new_i, new_j)
-
-                print(new_pos)
 
                 square_points = state.special_squares.get(new_pos, 0)
 
@@ -55,8 +51,22 @@ class Game():
         
         return next_nodes
 
-    def is_terminal(self, node):
-        pass
+    def is_terminal(self, node: Node, max_depht: int = 6) -> bool:
+        """
+        No puede haber más movimientos o alcanza maxima profuniddad la máquina
+        """
+        if node.depth >= max_depht:
+            return True
+        
+        pos = node.state.pos_max if node.type == NodeType.MAX else node.state.pos_min
+        destroyed = node.state.destroyed_squares
 
-    def _utility(self, node):
-        pass
+        for (di,dj) in KNIGHT_MOVES:
+            new_i, new_j = pos[0] + di, pos[1] + dj
+            if 0 <= new_i < ROWS and 0 <= new_j < COLS and (new_i,new_j) not in destroyed: 
+                return False
+            
+        return True
+
+    def _utility(self, state):
+        return state.pts_max - state.pts_min
