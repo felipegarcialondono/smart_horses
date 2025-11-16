@@ -1,4 +1,3 @@
-
 import tkinter as tk
 from app.views.home_view import HomeView
 from app.views.game_view import GameView
@@ -37,16 +36,25 @@ class Controller:
         self.show_view("game")
 
         if self.model._turn == Turn.COMPUTER:
+            print("🤖 Turno de la computadora - iniciando cálculo...")
             t = threading.Thread(target=self._apply_machineM, daemon=True)
             t.start()
 
     def _apply_machineM(self):
+        print("🔍 Calculando mejor movimiento...")
         move = self.machine.choose_game(self.model)
+        print(f"✅ Movimiento calculado: {move}")
         
         def apply_move():
             if move is not None:
-                self.model.play_turn(move)
+                print(f"🎯 Aplicando movimiento a posición: {move}")
+                success = self.model.play_turn(move)
+                print(f"{'✅' if success else '❌'} Movimiento {'exitoso' if success else 'fallido'}")
+                print(f"🔄 Nuevo turno: {self.model._turn}")
                 self.views["game"].draw_board()
+            else:
+                print("⚠️ No hay movimientos disponibles para la computadora")
+        
         self.root.after(0, apply_move)
 
     def reset_game(self):

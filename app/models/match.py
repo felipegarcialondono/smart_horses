@@ -21,7 +21,7 @@ class Cell:
 
 class Match():
     def __init__(self):
-        self._turn = Turn.PLAYER
+        self._turn = Turn.COMPUTER
         self._destroyed_squares = set()
         self._board, self._computer_pos, self._player_pos, self._special_squares = self._initialize_board()
 

@@ -3,6 +3,7 @@ import os
 from app.models.match import *
 from app.utils.constants import *
 from app.models.player import Player
+import threading
 
 class GameView(tk.Frame):
     def __init__(self, parent, controller, match):
@@ -74,6 +75,10 @@ class GameView(tk.Frame):
         self.machine_img = tk.PhotoImage(file=machine_path)
 
         self.draw_board()
+        
+        # Si es turno de la computadora al iniciar, que juegue
+        if self.match._turn == Turn.COMPUTER:
+            self.after(1000, self._trigger_computer_move)
 
     def draw_board(self):
         board = self.match.board
@@ -141,7 +146,6 @@ class GameView(tk.Frame):
                 label.original_bg = bg
                 self.hover_labels[(i, j)] = label
 
-                
                 # HOVER Y CLICK solo en las casillas DESTINO
                 if (i, j) in self.valid_moves:
                     label.configure(cursor="hand2")
@@ -160,15 +164,13 @@ class GameView(tk.Frame):
         """Cuando el mouse entra en una casilla válida - mostrar el path completo"""
         # Obtener el path hacia esta casilla
         current_player_pos = self.match._player_pos
-        path = self.player.get_path_to_square(current_player_pos, pos) 
-
-        self.current_hover_path = path + [current_player_pos] 
-        self.current_hover_path = path 
+        path = self.player.get_path_to_square(current_player_pos, pos)
         
+        # Añadir la posición actual del jugador al path
+        self.current_hover_path = path + [current_player_pos]
         
-        
-        # Pintar todas las casillas del path de verde
-        for path_pos in path:
+        # Pintar todas las casillas del path de verde (incluyendo la posición actual)
+        for path_pos in self.current_hover_path:
             label = self.hover_labels.get(path_pos)
             if label:
                 label.configure(bg="#90EE90", relief="sunken")
@@ -183,11 +185,38 @@ class GameView(tk.Frame):
         
         self.current_hover_path = []
 
-    
-
     def on_cell_click(self, pos):
         """Cuando se hace click en una casilla válida"""
+        print(f"👤 Jugador intenta moverse a: {pos}")
         success = self.match.play_turn(pos)
         
         if success:
+            print(f"✅ Jugador se movió exitosamente")
+            print(f"🔄 Nuevo turno: {self.match._turn}")
             self.draw_board()
+            
+            # Si ahora es turno de la computadora, ejecutarla automáticamente
+            if self.match._turn == Turn.COMPUTER:
+                print("🤖 Iniciando turno de la computadora...")
+                self.after(500, self._trigger_computer_move)
+
+    def _trigger_computer_move(self):
+        """Dispara el movimiento de la computadora"""
+        t = threading.Thread(target=self._apply_machine_move, daemon=True)
+        t.start()
+
+    def _apply_machine_move(self):
+        """Ejecuta el movimiento de la computadora en un hilo separado"""
+        move = self.controller.machine.choose_game(self.match)
+        
+        def apply_move():
+            if move is not None:
+                print(f"🎯 Computadora se mueve a: {move}")
+                success = self.match.play_turn(move)
+                print(f"{'✅' if success else '❌'} Movimiento {'exitoso' if success else 'fallido'}")
+                print(f"🔄 Nuevo turno: {self.match._turn}")
+                self.draw_board()
+            else:
+                print("⚠️ La computadora no tiene movimientos disponibles")
+        
+        self.after(0, apply_move)
