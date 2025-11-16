@@ -23,7 +23,13 @@ class Game():
         for (di, dj) in KNIGHT_MOVES:
             new_i, new_j = i + di, j + dj
 
-            if 0 <= new_i < ROWS and 0 <= new_j < COLS and (new_i, new_j) not in destroyed_squares:
+            # ✅ Verificar que la nueva posición no esté destruida ni ocupada por algún jugador
+            if (0 <= new_i < ROWS and 
+                0 <= new_j < COLS and 
+                (new_i, new_j) not in destroyed_squares and
+                (new_i, new_j) != state.pos_max and  # ✅ No moverse a la posición del MAX
+                (new_i, new_j) != state.pos_min):    # ✅ No moverse a la posición del MIN
+                
                 new_pos = (new_i, new_j)
 
                 square_points = state.special_squares.get(new_pos, 0)
@@ -44,7 +50,7 @@ class Game():
                     parent=node,
                     state=new_state,
                     depth=node.depth + 1,
-                    utility=self._utility(new_state),  # ✅ Cambiar state por new_state
+                    utility=self._utility(new_state),
                 )
 
                 next_nodes.append(new_node)
