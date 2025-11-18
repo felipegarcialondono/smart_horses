@@ -27,9 +27,8 @@ class Match():
 
         self._computer_points = 0
         self._player_points = 0
-
-        self._finished = False
-        self._winner = None
+        self._game_over = False
+        self._winner = None  # 'COMPUTER', 'PLAYER', 'TIE'
 
     def _initialize_board(self):
         board = [[Cell(CellType.EMPTY) for _ in range(COLS)] for _ in range(ROWS)]
@@ -55,7 +54,67 @@ class Match():
     @property
     def board(self):
         return self._board
-    
+
+    def _has_valid_moves(self, pos):
+        """Verifica si hay movimientos válidos desde una posición"""
+        i_cur, j_cur = pos
+        
+        for (di, dj) in KNIGHT_MOVES:
+            new_i, new_j = i_cur + di, j_cur + dj
+            
+            if not (0 <= new_i < ROWS and 0 <= new_j < COLS):
+                continue
+            
+            cell = self._board[new_i][new_j]
+            
+            if cell.type not in (CellType.DESTROYED, CellType.COMPUTER, CellType.PLAYER):
+                return True
+        
+        return False
+
+    def check_game_over(self):
+        """Verifica si el juego ha terminado y aplica penalizaciones si es necesario"""
+        computer_can_move = self._has_valid_moves(self._computer_pos)
+        player_can_move = self._has_valid_moves(self._player_pos)
+        
+        if not computer_can_move and not player_can_move:
+            # Ambos sin movimientos - fin del juego
+            self._game_over = True
+            if self._computer_points > self._player_points:
+                self._winner = 'COMPUTER'
+            elif self._player_points > self._computer_points:
+                self._winner = 'PLAYER'
+            else:
+                self._winner = 'TIE'
+            return True
+        
+        elif not computer_can_move and player_can_move:
+            # Solo computadora sin movimientos - penalización
+            self._computer_points -= 4
+            print("⚠️ Computadora sin movimientos - Penalización: -4 puntos")
+            self._game_over = True
+            if self._computer_points > self._player_points:
+                self._winner = 'COMPUTER'
+            elif self._player_points > self._computer_points:
+                self._winner = 'PLAYER'
+            else:
+                self._winner = 'TIE'
+            return True
+        
+        elif not player_can_move and computer_can_move:
+            # Solo jugador sin movimientos - penalización
+            self._player_points -= 4
+            print("⚠️ Jugador sin movimientos - Penalización: -4 puntos")
+            self._game_over = True
+            if self._computer_points > self._player_points:
+                self._winner = 'COMPUTER'
+            elif self._player_points > self._computer_points:
+                self._winner = 'PLAYER'
+            else:
+                self._winner = 'TIE'
+            return True
+        
+        return False
 
     def play_turn(self, pos:tuple[int]):
         i, j = pos
@@ -93,69 +152,3 @@ class Match():
             self._turn = Turn.COMPUTER
     
         return True
-    
-    def available_moves_from(self, pos):
-        """Lista de todas las posiciones legales no destruidas"""
-        moves = []
-        for (di,dj) in KNIGHT_MOVES:
-            new_i, new_j = pos[0] + di, pos[1] + dj
-            if 0 <= new_i < ROWS and 0 <= new_j < COLS and (new_i,new_j) not in self._destroyed_squares:
-                cell = self.board[new_i][new_j]
-                if cell.type not in (CellType.DESTROYED, CellType.COMPUTER, CellType.PLAYER):
-                    moves.append((new_i, new_j))
-        return moves
-    
-    def _check(self):
-        """
-        1. Si el jugador en turno NO tiene mov legales pierde, el que si tenga mov legales
-        posibles gana.
-        2. Si no hay casillas disponibles
-        """
-
-        moves_computer = self.available_moves_from(self._computer_pos)
-        moves_player = self.available_moves_from(self._player_pos)
-
-        if not moves_computer and not moves_player:
-            self._finished = True
-            if self._computer_points > self._player_points:
-                self._winner = Turn.COMPUTER
-            elif self._player_points > self._computer_points:
-                self._winner = Turn.PLAYER
-            else:
-                self._winner = None
-            return
-        
-        if self._turn == Turn.COMPUTER and not moves_computer:
-            self._finished = True
-            self._winner = Turn.PLAYER
-            return
-        elif self._turn == Turn.PLAYER and not moves_player:
-            self._finished = True
-            self._winner = Turn.COMPUTER
-            return
-    
-    def is_finished(self):
-        return self._finished
-    
-    def is_winner(self):
-        return self._winner
-    
-    @property
-    def computer_points(self):
-        return self._computer_points
-    
-    @property
-    def player_points(self):
-        return self._player_points
-    
-    @property
-    def computer_pos(self):
-        return self._computer_pos
-    
-    @property
-    def player_pos(self):
-        return self._player_pos
-    
-    @property
-    def turn(self):
-        return self._turn

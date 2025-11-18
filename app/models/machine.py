@@ -13,17 +13,17 @@ class Machine:
         else:
            self.max_depth = 6
         
-        self.game = Game(None)
+        self.game = None  # ✅ Inicializar como None
 
     def _build_root(self, match):
         """Para construir el nodo raiz a partir del Match, se toma la máquina como MAX"""
         state = State(
-            pts_min= match._player_points,
+            pts_min=match._player_points,
             pts_max=match._computer_points,
             pos_min=match._player_pos,
             pos_max=match._computer_pos,
             destroyed_squares=frozenset(match._destroyed_squares),
-            special_squares= match._special_squares
+            special_squares=match._special_squares
         )
 
         root = Node(
@@ -35,37 +35,54 @@ class Machine:
         )
         return root
     
-    def choose_game(self,match):
+    def choose_game(self, match):
         """devuelve la posicion (i,j) para la maquina, si no hay mov legales devuelve None"""
         root = self._build_root(match)
-        self.game = Game(root.state)
+        self.game = Game(root.state)  # ✅ Crear Game con el estado inicial
 
+        print(f"🎮 Posición actual computadora: {root.state.pos_max}")
+        print(f"🎮 Posición actual jugador: {root.state.pos_min}")
+        print(f"📊 Puntos - Computadora: {root.state.pts_max}, Jugador: {root.state.pts_min}")
+
+        
         best_val = -math.inf
         best_move = None
 
         for child in self.game.operators(root):
             val = self._min_value(child, -math.inf, math.inf)
-            #child.state._pos_max es la nueva posicion maxima
-            # si child.type fue MIN significa que el mov fue hecho por MAX quedo guardada en child.state.pos_max
             if val > best_val:
                 best_val = val
                 if root.type == NodeType.MAX:
                     best_move = child.state.pos_max
                 else:
-                    best_move = child.state.pos_min
-
+                    best_move = child.state.pos_min 
+        
+        print(f"\n🏆 Mejor movimiento encontrado: {best_move} con valor: {best_val}")
+    
         return best_move
     
-    def _max_value(self, node:Node, alpha, beta):
-
+    def _max_value(self, node: Node, alpha, beta):
+        # Condición de corte por profundidad o estado terminal
+        if node.depth >= self.max_depth or self.game.is_terminal(node):
+            return self.game._utility(node.state)  # ✅ Pasar node.state en lugar de node
+        
         v = -math.inf
         for child in self.game.operators(node):
-            v = max(v, self._min_value(child))
+            v = max(v, self._min_value(child, alpha, beta))
+            if v >= beta:  # Poda beta
+                return v
+            alpha = max(alpha, v)
         return v
     
-    def _min_value(self, node:Node, alpha, beta):
-
+    def _min_value(self, node: Node, alpha, beta):
+        # Condición de corte por profundidad o estado terminal
+        if node.depth >= self.max_depth or self.game.is_terminal(node):
+            return self.game._utility(node.state)  # ✅ Pasar node.state en lugar de node
+        
         v = math.inf
         for child in self.game.operators(node):
-            v = min(v, self._max_value(child))
+            v = min(v, self._max_value(child, alpha, beta))
+            if v <= alpha:  # Poda alpha
+                return v
+            beta = min(beta, v)
         return v

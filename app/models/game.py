@@ -23,7 +23,13 @@ class Game():
         for (di, dj) in KNIGHT_MOVES:
             new_i, new_j = i + di, j + dj
 
-            if 0 <= new_i < ROWS and 0 <= new_j < COLS and (new_i, new_j) not in destroyed_squares:
+            # ✅ Verificar que la nueva posición no esté destruida ni ocupada por algún jugador
+            if (0 <= new_i < ROWS and 
+                0 <= new_j < COLS and 
+                (new_i, new_j) not in destroyed_squares and
+                (new_i, new_j) != state.pos_max and  # ✅ No moverse a la posición del MAX
+                (new_i, new_j) != state.pos_min):    # ✅ No moverse a la posición del MIN
+                
                 new_pos = (new_i, new_j)
 
                 square_points = state.special_squares.get(new_pos, 0)
@@ -51,23 +57,27 @@ class Game():
         
         return next_nodes
 
-    def is_terminal(self, node: Node, max_depth: int = 6) -> bool:
+    def is_terminal(self, node: Node) -> bool:
         """
-        No puede haber más movimientos o alcanza maxima profuniddad la máquina
+        Verifica si el nodo es terminal (no hay más movimientos posibles para el jugador actual)
         """
-        if node.depth >= max_depth:
-            return True
-        
+        # Determinar qué jugador debe moverse
         pos = node.state.pos_max if node.type == NodeType.MAX else node.state.pos_min
         destroyed = node.state.destroyed_squares
 
-        for (di,dj) in KNIGHT_MOVES:
+        # Verificar si existe al menos un movimiento legal
+        for (di, dj) in KNIGHT_MOVES:
             new_i, new_j = pos[0] + di, pos[1] + dj
-            if 0 <= new_i < ROWS and 0 <= new_j < COLS and (new_i,new_j) not in destroyed: 
-                return False
+            if 0 <= new_i < ROWS and 0 <= new_j < COLS and (new_i, new_j) not in destroyed: 
+                return False  # Hay al menos un movimiento legal
             
-        return True
+        return True  # No hay movimientos legales, es terminal
 
+    def _utility(self, state: State) -> int:
+        """
+        Función de utilidad: diferencia de puntos desde la perspectiva de MAX (computadora)
+        """
+        return state.pts_max - state.pts_min
     def _utility(self, state):
         # Pesos (se pueden modificar para cambiar la "personalidad" de la IA)
         W_SCORE = 1.0
