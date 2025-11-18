@@ -73,11 +73,6 @@ class Game():
             
         return True  # No hay movimientos legales, es terminal
 
-    def _utility(self, state: State) -> int:
-        """
-        Función de utilidad: diferencia de puntos desde la perspectiva de MAX (computadora)
-        """
-        return state.pts_max - state.pts_min
     def _utility(self, state):
         # Pesos (se pueden modificar para cambiar la "personalidad" de la IA)
         W_SCORE = 1.0
