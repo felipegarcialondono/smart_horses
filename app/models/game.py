@@ -61,16 +61,19 @@ class Game():
         """
         Verifica si el nodo es terminal (no hay más movimientos posibles para el jugador actual)
         """
-        # Determinar qué jugador debe moverse
+        # Determinar qué jugador debe moverse y posición del oponente
         pos = node.state.pos_max if node.type == NodeType.MAX else node.state.pos_min
+        opponent_pos = node.state.pos_min if node.type == NodeType.MAX else node.state.pos_max
         destroyed = node.state.destroyed_squares
 
-        # Verificar si existe al menos un movimiento legal
+        # Verificar si existe al menos un movimiento legal (no salir del tablero, no estar destruida y no ser la casilla del oponente)
         for (di, dj) in KNIGHT_MOVES:
             new_i, new_j = pos[0] + di, pos[1] + dj
-            if 0 <= new_i < ROWS and 0 <= new_j < COLS and (new_i, new_j) not in destroyed: 
+            if (0 <= new_i < ROWS and 0 <= new_j < COLS and
+                (new_i, new_j) not in destroyed and
+                (new_i, new_j) != opponent_pos):
                 return False  # Hay al menos un movimiento legal
-            
+
         return True  # No hay movimientos legales, es terminal
 
     def _utility(self, state):
@@ -79,31 +82,35 @@ class Game():
         W_POTENTIAL = 0.5  # Menos importante que el score actual
         W_MOVILITY = 0.1  # Menos importante que el score
         
-        # Componente 1: Puntuación Actual
-        C1 = state.pts_max - state.pts_min
-        
-        # Componente 2: Potencial de Puntuación
+        # Componente 3: Movilidad (usado también para penalización en C1)
+        machine_moves = self._count_valid_moves(state.pos_max, state.destroyed_squares, state.pos_min)
+        human_moves = self._count_valid_moves(state.pos_min, state.destroyed_squares, state.pos_max)
+
+        # Penalización por quedarse sin movimientos (regla del juego)
+        machine_penalty = -4 if machine_moves == 0 else 0
+        human_penalty = -4 if human_moves == 0 else 0
+
+        # Componente 1: Puntuación Actual (incluye penalizaciones)
+        C1 = (state.pts_max + machine_penalty) - (state.pts_min + human_penalty)
+
+        # Componente 2: Potencial de Puntuación (considera positivos y negativos)
         machine_potential = 0
         human_potential = 0
         
         for square_pos, points in state.special_squares.items():
             # Verificar si la casilla está activa (no destruida)
             if square_pos not in state.destroyed_squares:
-                # Verificar si la máquina puede saltar a esta casilla
-                if self._can_jump_to(state.pos_max, square_pos, state.destroyed_squares):
-                    if points > 0:
-                        machine_potential += points
+                # Verificar si la máquina puede saltar a esta casilla (y que no sea la casilla del oponente)
+                if self._can_jump_to(state.pos_max, square_pos, state.destroyed_squares, state.pos_min):
+                    machine_potential += points
                 
                 # Verificar si el humano puede saltar a esta casilla
-                if self._can_jump_to(state.pos_min, square_pos, state.destroyed_squares):
-                    if points > 0:
-                        human_potential += points
-        
+                if self._can_jump_to(state.pos_min, square_pos, state.destroyed_squares, state.pos_max):
+                    human_potential += points
+
         C2 = machine_potential - human_potential
-        
+
         # Componente 3: Movilidad
-        machine_moves = self._count_valid_moves(state.pos_max, state.destroyed_squares)
-        human_moves = self._count_valid_moves(state.pos_min, state.destroyed_squares)
         C3 = machine_moves - human_moves
         
         # Resultado Final
@@ -111,8 +118,9 @@ class Game():
         
         return int(total_heuristic)
     
-    def _can_jump_to(self, from_pos, to_pos, destroyed_squares):
-        """Verifica si desde from_pos se puede hacer un movimiento de caballo válido a to_pos"""
+    def _can_jump_to(self, from_pos, to_pos, destroyed_squares, opponent_pos):
+        """Verifica si desde from_pos se puede hacer un movimiento de caballo válido a to_pos
+        y que la casilla destino no sea la del oponente ni esté destruida."""
         from_i, from_j = from_pos
         to_i, to_j = to_pos
         
@@ -126,6 +134,10 @@ class Game():
         # Verificar que la casilla destino no esté destruida
         if to_pos in destroyed_squares:
             return False
+
+        # Verificar que la casilla destino no sea la ocupada por el oponente
+        if to_pos == opponent_pos:
+            return False
         
         # Verificar que esté dentro de los límites del tablero
         if not (0 <= to_i < ROWS and 0 <= to_j < COLS):
@@ -133,16 +145,18 @@ class Game():
         
         return True
     
-    def _count_valid_moves(self, pos, destroyed_squares):
-        """Cuenta cuántos movimientos válidos hay desde una posición"""
+    def _count_valid_moves(self, pos, destroyed_squares, opponent_pos):
+        """Cuenta cuántos movimientos válidos hay desde una posición, excluyendo la casilla del oponente."""
         i, j = pos
         count = 0
         
         for (di, dj) in KNIGHT_MOVES:
             new_i, new_j = i + di, j + dj
             
-            # Verificar que esté dentro de los límites y no esté destruida
-            if 0 <= new_i < ROWS and 0 <= new_j < COLS and (new_i, new_j) not in destroyed_squares:
+            # Verificar que esté dentro de los límites, no esté destruida y no sea la posición del oponente
+            if (0 <= new_i < ROWS and 0 <= new_j < COLS and
+                (new_i, new_j) not in destroyed_squares and
+                (new_i, new_j) != opponent_pos):
                 count += 1
         
         return count
