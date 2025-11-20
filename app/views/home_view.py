@@ -47,6 +47,27 @@ class HomeView(tk.Frame):
                 fg="red"
             ).pack(pady=30)
 
+
+        BTN_WIDTH = 22
+        
+        start_btn = tk.Button(
+            main_content_frame,
+            text="INICIAR JUEGO",
+            bg="#ffc300",
+            fg="#0B1F25",
+            relief="flat",
+            font=self.FONT_BTN_LARGE,
+            activebackground="#fffcc5",
+            activeforeground="#e0ac00",
+            command=lambda: [controller.music_player.play_sound("click"), controller.show_view("difficulty")],
+            cursor="hand2",
+            width=BTN_WIDTH,
+            height=2,
+            borderwidth=0,
+            highlightthickness=0
+        )
+        start_btn.pack(pady=(10, 25))
+        
         description_frame = tk.Frame(main_content_frame, bg="#1a3a42", relief="raised", borderwidth=2)
         description_frame.pack(pady=20, padx=40, fill="x")
 
@@ -67,25 +88,7 @@ class HomeView(tk.Frame):
             justify="center"
         ).pack(pady=10, padx=20)
 
-        BTN_WIDTH = 22
-        
-        start_btn = tk.Button(
-            main_content_frame,
-            text="INICIAR JUEGO",
-            bg="#ffc300",
-            fg="#0B1F25",
-            relief="flat",
-            font=self.FONT_BTN_LARGE,
-            activebackground="#fffcc5",
-            activeforeground="#e0ac00",
-            command=lambda: [controller.music_player.play_sound("click"), controller.show_view("difficulty")],
-            cursor="hand2",
-            width=BTN_WIDTH,
-            height=2,
-            borderwidth=0,
-            highlightthickness=0
-        )
-        start_btn.pack(pady=15)
+       
 
         def on_enter(e):
             start_btn.config(bg="#e0ac00")

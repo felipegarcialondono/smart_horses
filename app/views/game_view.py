@@ -145,7 +145,7 @@ class GameView(tk.Frame):
 
         try:
             img_pil = Image.open(logo_path)
-            max_size = (120, 120)
+            max_size = (100, 100)
             img_pil.thumbnail(max_size, Image.LANCZOS)
             self.logo = ImageTk.PhotoImage(img_pil)
 
@@ -253,7 +253,25 @@ class GameView(tk.Frame):
 
         restart_cmd = lambda: [controller.music_player.play_sound("click"), controller.reset_game()]
         menu_cmd = lambda: [controller.music_player.play_sound("click"), controller.show_view("home")]
-        exit_cmd = lambda: self.master.destroy
+
+        def exit_cmd():
+            try:
+                pygame.mixer.stop()
+            except Exception:
+                pass
+            try:
+                controller.music_player.play_sound("click")
+            except Exception:
+                pass
+            
+            try:
+                top = self.winfo_toplevel()
+                top.destroy()
+            except Exception:
+                try:
+                    self.master.destroy()
+                except Exception:
+                    pass
 
         btn1 = make_round_button(btn_frame, "REINICIAR", "#FFC857", "#08151A", restart_cmd, font=("Segoe UI",12,"bold"))
         btn1.pack(fill="x", pady=6)
@@ -446,23 +464,20 @@ class GameView(tk.Frame):
         button_frame.pack(pady=18)
 
         def on_play_again():
+            
+            pygame.mixer.stop()
+            self.controller.music_player.play_sound("click")
             try:
-                pygame.mixer.stop()
-            except Exception:
-                pass
-            try:
-                self.controller.music_player.play_sound("click")
-            except Exception:
-                pass
+                self.controller.music_player.play_music("game")
+                self.controller.music_player.load_sounds()
+            except Exception as e:
+                print("Error reactivando música:", e)
             game_over_window.destroy()
             self.controller.reset_game()
 
         def on_menu():
             try:
                 pygame.mixer.stop()
-            except Exception:
-                pass
-            try:
                 self.controller.music_player.play_sound("click")
             except Exception:
                 pass
