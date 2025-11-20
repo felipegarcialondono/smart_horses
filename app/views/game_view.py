@@ -12,13 +12,22 @@ class GameView(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.match = match
-        
+
         self.player = Player(match)
         self.valid_moves = []
         self.hover_labels = {}
         self.current_hover_path = []
 
-        # Layout 20% / 80%
+        # Control de input mientras la IA piensa
+        self.input_locked = False
+
+        # Labels de info
+        self.turn_label = None
+        self.coords_label = None
+        self.level_label = None
+        self.thinking_label = None  
+
+
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=9)
         self.grid_rowconfigure(0, weight=1)
@@ -30,7 +39,7 @@ class GameView(tk.Frame):
         # RIGHT
         right_frame = tk.Frame(self, bg="#226d7c")
         right_frame.grid(row=0, column=1, sticky="nsew")
-        
+
         self.board_frame = tk.Frame(right_frame)
         self.board_frame.pack(expand=True, fill="both", padx=10, pady=10)
 
@@ -38,11 +47,106 @@ class GameView(tk.Frame):
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         logo_path = os.path.join(base_path, "assets", "logo-sm.png")
 
+        # --- NIVEL DE DIFICULTAD ---
+        level_frame = tk.Frame(left_frame, bg="#0B1F25")
+        level_frame.pack(pady=8)
+
+        tk.Label(
+            level_frame,
+            text="DIFICULTAD",
+            bg="#0B1F25",
+            fg="white",
+            font=("TkDefaultFont", 12, "bold")
+        ).pack()
+
+        # Determinar nombre y profundidad desde controller.difficulty (constantes)
+        try:
+            diff = getattr(self.controller, "difficulty", None)
+        except Exception:
+            diff = None
+
+        level_name = "AMATEUR"
+        depth = "?"
+        if diff == BEGGINER:
+            level_name = "PRINCIPIANTE"
+            depth = 2
+        elif diff == AMATEUR:
+            level_name = "AMATEUR"
+            depth = 4
+        elif diff == EXPERT:
+            level_name = "EXPERTO"
+            depth = 6
+        else:
+            level_name = getattr(self.match, "level_name", level_name)
+            depth = getattr(self.match, "depth", depth)
+
+        self.level_label = tk.Label(
+            level_frame,
+            text=f"{level_name} (profundidad {depth})",
+            bg="#0B1F25",
+            fg="#ffc300",
+            font=("TkDefaultFont", 11)
+        )
+        self.level_label.pack()
+
+        # POSICIONES (coordenadas)
+        coords_frame = tk.Frame(left_frame, bg="#0B1F25")
+        coords_frame.pack(pady=10)
+
+        tk.Label(
+            coords_frame,
+            text="POSICIONES",
+            bg="#0B1F25",
+            fg="white",
+            font=("TkDefaultFont", 12, "bold")
+        ).pack()
+
+        self.coords_label = tk.Label(
+            coords_frame,
+            text="",
+            bg="#0B1F25",
+            fg="#ffc300",
+            font=("TkDefaultFont", 11),
+        )
+        self.coords_label.pack()
+
+        # TURNOS
+        turn_frame = tk.Frame(left_frame, bg="#0B1F25")
+        turn_frame.pack(pady=6)
+
+        tk.Label(
+            turn_frame,
+            text="TURNO ACTUAL",
+            bg="#0B1F25",
+            fg="white",
+            font=("TkDefaultFont", 12, "bold")
+        ).pack()
+
+        self.turn_label = tk.Label(
+            turn_frame,
+            text="",
+            bg="#0B1F25",
+            fg="#00ced1",
+            font=("TkDefaultFont", 12),
+        )
+        self.turn_label.pack()
+
+        self.thinking_label = tk.Label(
+            left_frame,
+            text="",
+            bg="#0B1F25",
+            fg="#ffd86b",
+            font=("TkDefaultFont", 11, "italic")
+        )
+        self.thinking_label.pack(pady=4)
+
         try:
             img_pil = Image.open(logo_path)
+            max_size = (140,140)
+            img_pil.thumbnail(max_size, Image.LANCZOS)
             self.logo = ImageTk.PhotoImage(img_pil)
             tk.Label(left_frame, image=self.logo, bg="#0B1F25").pack(pady=10)
-        except:
+        except Exception:
             tk.Label(left_frame, text="SMART HORSES", bg="#0B1F25", fg="#ffc300",
                     font=("TkDefaultFont", 16, "bold")).pack(pady=10)
 
@@ -50,50 +154,50 @@ class GameView(tk.Frame):
         score_frame = tk.Frame(left_frame, bg="#0B1F25")
         score_frame.pack(pady=15)
 
-        tk.Label(score_frame, text="PUNTUACIÓN", bg="#0B1F25", fg="white", 
+        tk.Label(score_frame, text="PUNTUACIÓN", bg="#0B1F25", fg="white",
                 font=("TkDefaultFont", 14, "bold")).pack(pady=5)
 
         # Cargar iconos para los jugadores
         icons_path = os.path.join(base_path, "assets", "icons")
-        
+
         try:
             self.icon_computer = ImageTk.PhotoImage(Image.open(os.path.join(icons_path, "robot.png")).resize((20, 20)))
             self.icon_player = ImageTk.PhotoImage(Image.open(os.path.join(icons_path, "user.png")).resize((20, 20)))
             icons_loaded = True
-        except:
+        except Exception:
             icons_loaded = False
 
         # Computadora
         computer_frame = tk.Frame(score_frame, bg="#1a3a42", relief="raised", borderwidth=2)
         computer_frame.pack(fill="x", pady=5, padx=10)
-        
+
         computer_header = tk.Frame(computer_frame, bg="#1a3a42")
         computer_header.pack(pady=2)
-        
+
         if icons_loaded:
             tk.Label(computer_header, image=self.icon_computer, bg="#1a3a42").pack(side="left", padx=5)
-        
+
         tk.Label(computer_header, text="Computadora", bg="#1a3a42", fg="#00ced1",
                 font=("TkDefaultFont", 11, "bold")).pack(side="left")
-        
-        self.computer_score_label = tk.Label(computer_frame, text="0", bg="#1a3a42", 
+
+        self.computer_score_label = tk.Label(computer_frame, text="0", bg="#1a3a42",
                                              fg="white", font=("TkDefaultFont", 20, "bold"))
         self.computer_score_label.pack(pady=5)
 
         # Jugador
         player_frame = tk.Frame(score_frame, bg="#1a3a42", relief="raised", borderwidth=2)
         player_frame.pack(fill="x", pady=5, padx=10)
-        
+
         player_header = tk.Frame(player_frame, bg="#1a3a42")
         player_header.pack(pady=2)
-        
+
         if icons_loaded:
             tk.Label(player_header, image=self.icon_player, bg="#1a3a42").pack(side="left", padx=5)
-        
+
         tk.Label(player_header, text="Jugador", bg="#1a3a42", fg="#ffc300",
                 font=("TkDefaultFont", 11, "bold")).pack(side="left")
-        
-        self.player_score_label = tk.Label(player_frame, text="0", bg="#1a3a42", 
+
+        self.player_score_label = tk.Label(player_frame, text="0", bg="#1a3a42",
                                            fg="white", font=("TkDefaultFont", 20, "bold"))
         self.player_score_label.pack(pady=5)
 
@@ -147,41 +251,96 @@ class GameView(tk.Frame):
             img_machine = Image.open(machine_path)
             self.human_img = ImageTk.PhotoImage(img_human)
             self.machine_img = ImageTk.PhotoImage(img_machine)
-        except:
+        except Exception:
             self.human_img = None
             self.machine_img = None
 
         self.draw_board()
         self.update_scores()
-        
-        if self.match._turn == Turn.COMPUTER:
-            self.after(1000, self._trigger_computer_move)
+        self.update_turn_label()
+        self.update_coordinates()
+        self.update_level_label()
 
+ 
+        if self.match._turn == Turn.COMPUTER:
+            self._show_thinking(True)
+            self.after(700, self._trigger_computer_move)
+
+    # ------------------------------ Helpers ------------------------------
     def update_scores(self):
         """Actualiza los marcadores de puntos"""
         self.computer_score_label.config(text=str(self.match._computer_points))
         self.player_score_label.config(text=str(self.match._player_points))
 
+    def update_coordinates(self):
+        player = getattr(self.match, "_player_pos", None)
+        comp = getattr(self.match, "_computer_pos", None)
+        text = f"Jugador: {player}\nComputadora: {comp}"
+        if self.coords_label:
+            self.coords_label.config(text=text)
+
+    def update_turn_label(self):
+        if not self.turn_label:
+            return
+        try:
+            if self.match._turn == Turn.PLAYER:
+                self.turn_label.config(text="Jugador")
+            else:
+                self.turn_label.config(text="Computadora")
+        except Exception:
+            self.turn_label.config(text="?")
+
+    def update_level_label(self):
+        if not self.level_label:
+            return
+        diff = getattr(self.controller, "difficulty", None)
+        level_name = getattr(self.match, "level_name", None)
+        depth = getattr(self.match, "depth", None)
+
+        if diff == BEGGINER or (level_name and str(level_name).lower().startswith("p")):
+            self.level_label.config(text="PRINCIPIANTE (profundidad 2)")
+        elif diff == AMATEUR or (level_name and str(level_name).lower().startswith("a")):
+            self.level_label.config(text="AMATEUR (profundidad 4)")
+        elif diff == EXPERT or (level_name and str(level_name).lower().startswith("e")):
+            self.level_label.config(text="EXPERTO (profundidad 6)")
+        elif depth:
+            self.level_label.config(text=f"PROFUNDIDAD {depth}")
+        else:
+            self.level_label.config(text=self.level_label.cget("text"))
+
+    def _show_thinking(self, show=True):
+        """Muestra u oculta el label 'Computadora pensando...'"""
+        if not self.thinking_label:
+            return
+        if show:
+            self.thinking_label.config(text="Computadora pensando...")
+        else:
+            self.thinking_label.config(text="")
+
+    # ------------------------------ Game Over ------------------------------
     def show_game_over(self):
         """Muestra la pantalla de fin de juego"""
         WIDTH = 600
         HEIGHT = 500
-        
-        # Detener la música del juego
-        self.controller.music_player.stop_music()
-        
-        # Reproducir sonido según resultado
-        if self.match._winner == 'PLAYER':
-            self.controller.music_player.play_sound("victory")
-        elif self.match._winner == 'COMPUTER':
-            self.controller.music_player.play_sound("defeat")
-        
+        try:
+            self.controller.music_player.stop_music()
+        except Exception:
+            pass
+
+        try:
+            if self.match._winner == 'PLAYER':
+                self.controller.music_player.play_sound("victory")
+            elif self.match._winner == 'COMPUTER':
+                self.controller.music_player.play_sound("defeat")
+        except Exception:
+            pass
+
         game_over_window = tk.Toplevel(self.master)
         game_over_window.title("Fin del Juego")
         game_over_window.geometry(f"{WIDTH}x{HEIGHT}")
         game_over_window.configure(bg="#0B1F25")
         game_over_window.transient(self.master)
-        
+
         game_over_window.update_idletasks()
         x = (game_over_window.winfo_screenwidth() // 2) - (WIDTH // 2)
         y = (game_over_window.winfo_screenheight() // 2) - (HEIGHT // 2)
@@ -189,7 +348,7 @@ class GameView(tk.Frame):
 
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         icons_path = os.path.join(base_path, "assets", "icons")
-        
+
         try:
             if self.match._winner == 'PLAYER':
                 icon_img = Image.open(os.path.join(icons_path, "trophy.png")).resize((100, 100))
@@ -206,12 +365,12 @@ class GameView(tk.Frame):
                 title = "EMPATE"
                 message = "¡Empate técnico!\nAmbos jugadores son iguales"
                 color = "#ffc300"
-            
+
             icon_photo = ImageTk.PhotoImage(icon_img)
             icon_label = tk.Label(game_over_window, image=icon_photo, bg="#0B1F25")
             icon_label.image = icon_photo
             icon_label.pack(pady=20)
-        except:
+        except Exception:
             if self.match._winner == 'PLAYER':
                 title = "¡VICTORIA!"
                 message = "¡Felicidades!\nHas derrotado a la computadora"
@@ -265,16 +424,27 @@ class GameView(tk.Frame):
         button_frame = tk.Frame(game_over_window, bg="#0B1F25")
         button_frame.pack(pady=25)
 
-        # Función auxiliar para detener sonidos y cerrar ventana
         def on_play_again():
-            pygame.mixer.stop()
-            self.controller.music_player.play_sound("click")
+            try:
+                pygame.mixer.stop()
+            except Exception:
+                pass
+            try:
+                self.controller.music_player.play_sound("click")
+            except Exception:
+                pass
             game_over_window.destroy()
             self.controller.reset_game()
 
         def on_menu():
-            pygame.mixer.stop()
-            self.controller.music_player.play_sound("click")
+            try:
+                pygame.mixer.stop()
+            except Exception:
+                pass
+            try:
+                self.controller.music_player.play_sound("click")
+            except Exception:
+                pass
             game_over_window.destroy()
             self.controller.show_view("home")
 
@@ -308,12 +478,13 @@ class GameView(tk.Frame):
         except tk.TclError:
             game_over_window.after(100, lambda: game_over_window.grab_set())
 
+    # ------------------------------ Board ------------------------------
     def draw_board(self):
         board = self.match.board
-        
+
         for widget in self.board_frame.winfo_children():
             widget.destroy()
-        
+
         self.hover_labels = {}
         self.current_hover_path = []
 
@@ -327,6 +498,7 @@ class GameView(tk.Frame):
                 text = ""
                 image = None
                 bg = "#FFF0DD"
+                fg = "white"
 
                 if cell.type == CellType.EMPTY:
                     bg = "#FFF0DD"
@@ -347,13 +519,15 @@ class GameView(tk.Frame):
                     else:
                         bg = "#e6e6e6"
                 elif cell.type == CellType.DESTROYED:
-                    bg = "#d63031"
+                    bg = "black"
+                    text = "X"
+                    fg = "white"
 
                 label = tk.Label(
                     self.board_frame,
                     text=text,
                     font=("TkDefaultFont", 14, "bold"),
-                    fg="white",
+                    fg=fg,
                     image=image,
                     width=4,
                     height=2,
@@ -365,7 +539,7 @@ class GameView(tk.Frame):
 
                 label.image = image
                 label.grid(row=i, column=j, sticky="nsew")
-                
+
                 label.original_bg = bg
                 self.hover_labels[(i, j)] = label
 
@@ -379,12 +553,19 @@ class GameView(tk.Frame):
             self.board_frame.grid_rowconfigure(i, weight=1)
         for j in range(COLS):
             self.board_frame.grid_columnconfigure(j, weight=1)
-    
+
+        self.update_turn_label()
+        self.update_coordinates()
+        self.update_level_label()
+
     def on_hover_enter(self, pos):
+        if self.input_locked:
+            return
+
         current_player_pos = self.match._player_pos
         path = self.player.get_path_to_square(current_player_pos, pos)
         self.current_hover_path = path + [current_player_pos]
-        
+
         for path_pos in self.current_hover_path:
             label = self.hover_labels.get(path_pos)
             if label:
@@ -398,65 +579,91 @@ class GameView(tk.Frame):
         self.current_hover_path = []
 
     def on_cell_click(self, pos):
+        if self.input_locked:
+            return
+
         print(f"Jugador intenta moverse a: {pos}")
-        
+
         cell = self.match.board[pos[0]][pos[1]]
         is_special = cell.type == CellType.SPECIAL
-        
+
         success = self.match.play_turn(pos)
-        
+
         if success:
-            if is_special:
-                self.controller.music_player.play_sound("special")
-            else:
-                self.controller.music_player.play_sound("move")
-            
+            try:
+                if is_special:
+                    self.controller.music_player.play_sound("special")
+                else:
+                    self.controller.music_player.play_sound("move")
+            except Exception:
+                pass
+
             print(f"Jugador se movio exitosamente")
             self.draw_board()
             self.update_scores()
-            
+
             if self.match.check_game_over():
                 self.after(500, self.show_game_over)
                 return
-            
+
+            self.update_coordinates()
+            self.update_turn_label()
+
             if self.match._turn == Turn.COMPUTER:
-                print("Iniciando turno de la computadora...")
-                self.after(500, self._trigger_computer_move)
+                self._show_thinking(True)
+                self.after(700, lambda: [self._trigger_computer_move()])
 
     def _trigger_computer_move(self):
+        self.input_locked = True
+        self.update_turn_label()
+        self._show_thinking(True)
+
         t = threading.Thread(target=self._apply_machine_move, daemon=True)
         t.start()
 
     def _apply_machine_move(self):
         if self.match._game_over:
+            self.input_locked = False
+            self._show_thinking(False)
+            self.update_turn_label()
             return
-        
+
         move = self.controller.machine.choose_game(self.match)
-        
+
         def apply_move():
             if move is not None:
                 print(f"Computadora se mueve a: {move}")
-                
+
                 cell = self.match.board[move[0]][move[1]]
                 is_special = cell.type == CellType.SPECIAL
-                
+
                 success = self.match.play_turn(move)
                 print(f"{'Exitoso' if success else 'Fallido'} movimiento")
-                
+
                 if success:
-                    if is_special:
-                        self.controller.music_player.play_sound("special")
-                    else:
-                        self.controller.music_player.play_sound("move")
-                
+                    try:
+                        if is_special:
+                            self.controller.music_player.play_sound("special")
+                        else:
+                            self.controller.music_player.play_sound("move")
+                    except Exception:
+                        pass
+
                 self.draw_board()
                 self.update_scores()
-                
+
                 if self.match.check_game_over():
                     self.after(500, self.show_game_over)
             else:
                 print("La computadora no tiene movimientos disponibles")
                 if self.match.check_game_over():
                     self.after(500, self.show_game_over)
-        
+
+            self.input_locked = False
+            self._show_thinking(False)
+            self.update_turn_label()
+            self.update_coordinates()
+            self.draw_board()
+
+
         self.after(0, apply_move)
