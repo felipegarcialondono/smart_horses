@@ -7,56 +7,59 @@ import threading
 from PIL import Image, ImageTk
 import pygame
 
+
 class GameView(tk.Frame):
     def __init__(self, parent, controller, match):
         super().__init__(parent)
         self.controller = controller
         self.match = match
 
+        self.base_font = ("Segoe UI", 11)
+        self.title_font = ("Segoe UI", 12, "bold")
+        self.big_font = ("Segoe UI", 14, "bold")
+
         self.player = Player(match)
         self.valid_moves = []
         self.hover_labels = {}
         self.current_hover_path = []
 
-        # Control de input mientras la IA piensa
         self.input_locked = False
 
-        # Labels de info
         self.turn_label = None
         self.coords_label = None
         self.level_label = None
-        self.thinking_label = None  
+        self.thinking_label = None
 
-
+        # Layout 20% / 80%
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=9)
         self.grid_rowconfigure(0, weight=1)
 
-        # LEFT
-        left_frame = tk.Frame(self, bg="#0B1F25")
+        # LEFT 
+        left_frame = tk.Frame(self, bg="#08151A")
         left_frame.grid(row=0, column=0, sticky="nsew")
 
         # RIGHT
-        right_frame = tk.Frame(self, bg="#226d7c")
+        right_frame = tk.Frame(self, bg="#1f6f74")
         right_frame.grid(row=0, column=1, sticky="nsew")
 
-        self.board_frame = tk.Frame(right_frame)
-        self.board_frame.pack(expand=True, fill="both", padx=10, pady=10)
+        self.board_frame = tk.Frame(right_frame, bg="#e9efe9")
+        self.board_frame.pack(expand=True, fill="both", padx=12, pady=12)
 
         # ------- LEFT CONTENT -------
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         logo_path = os.path.join(base_path, "assets", "logo-sm.png")
 
         # --- NIVEL DE DIFICULTAD ---
-        level_frame = tk.Frame(left_frame, bg="#0B1F25")
-        level_frame.pack(pady=8)
+        level_frame = tk.Frame(left_frame, bg="#08151A")
+        level_frame.pack(pady=(12,6), fill="x")
 
         tk.Label(
             level_frame,
             text="DIFICULTAD",
-            bg="#0B1F25",
-            fg="white",
-            font=("TkDefaultFont", 12, "bold")
+            bg="#08151A",
+            fg="#E6F7F6",
+            font=self.title_font
         ).pack()
 
         # Determinar nombre y profundidad desde controller.difficulty (constantes)
@@ -83,172 +86,190 @@ class GameView(tk.Frame):
         self.level_label = tk.Label(
             level_frame,
             text=f"{level_name} (profundidad {depth})",
-            bg="#0B1F25",
-            fg="#ffc300",
-            font=("TkDefaultFont", 11)
+            bg="#08151A",
+            fg="#FFC857",
+            font=self.base_font
         )
         self.level_label.pack()
 
         # POSICIONES (coordenadas)
-        coords_frame = tk.Frame(left_frame, bg="#0B1F25")
-        coords_frame.pack(pady=10)
+        coords_frame = tk.Frame(left_frame, bg="#08151A")
+        coords_frame.pack(pady=(8,6), fill="x")
 
         tk.Label(
             coords_frame,
             text="POSICIONES",
-            bg="#0B1F25",
-            fg="white",
-            font=("TkDefaultFont", 12, "bold")
+            bg="#08151A",
+            fg="#E6F7F6",
+            font=self.title_font
         ).pack()
 
         self.coords_label = tk.Label(
             coords_frame,
             text="",
-            bg="#0B1F25",
-            fg="#ffc300",
-            font=("TkDefaultFont", 11),
+            bg="#08151A",
+            fg="#FFC857",
+            font=self.base_font,
         )
         self.coords_label.pack()
 
         # TURNOS
-        turn_frame = tk.Frame(left_frame, bg="#0B1F25")
-        turn_frame.pack(pady=6)
+        turn_frame = tk.Frame(left_frame, bg="#08151A")
+        turn_frame.pack(pady=(8,6), fill="x")
 
         tk.Label(
             turn_frame,
             text="TURNO ACTUAL",
-            bg="#0B1F25",
-            fg="white",
-            font=("TkDefaultFont", 12, "bold")
+            bg="#08151A",
+            fg="#E6F7F6",
+            font=self.title_font
         ).pack()
 
         self.turn_label = tk.Label(
             turn_frame,
             text="",
-            bg="#0B1F25",
-            fg="#00ced1",
-            font=("TkDefaultFont", 12),
+            bg="#08151A",
+            fg="#7FE3D7",
+            font=self.base_font,
         )
         self.turn_label.pack()
 
         self.thinking_label = tk.Label(
             left_frame,
             text="",
-            bg="#0B1F25",
-            fg="#ffd86b",
-            font=("TkDefaultFont", 11, "italic")
+            bg="#08151A",
+            fg="#FFD66B",
+            font=("Segoe UI", 10, "italic")
         )
-        self.thinking_label.pack(pady=4)
+        self.thinking_label.pack(pady=6)
 
         try:
             img_pil = Image.open(logo_path)
-            max_size = (140,140)
+            max_size = (120, 120)
             img_pil.thumbnail(max_size, Image.LANCZOS)
             self.logo = ImageTk.PhotoImage(img_pil)
-            tk.Label(left_frame, image=self.logo, bg="#0B1F25").pack(pady=10)
+
+            logo_label = tk.Label(left_frame, image=self.logo, bg="#08151A")
+            logo_label.pack(pady=(6,8))
         except Exception:
-            tk.Label(left_frame, text="SMART HORSES", bg="#0B1F25", fg="#ffc300",
-                    font=("TkDefaultFont", 16, "bold")).pack(pady=10)
+            tk.Label(left_frame, text="SMART HORSES", bg="#08151A", fg="#FFC857",
+                     font=("Segoe UI", 18, "bold")).pack(pady=(6,8))
 
         # MARCADOR DE PUNTOS
-        score_frame = tk.Frame(left_frame, bg="#0B1F25")
-        score_frame.pack(pady=15)
+        score_frame = tk.Frame(left_frame, bg="#08151A")
+        score_frame.pack(pady=(4,12), fill="x")
 
-        tk.Label(score_frame, text="PUNTUACIÓN", bg="#0B1F25", fg="white",
-                font=("TkDefaultFont", 14, "bold")).pack(pady=5)
+        tk.Label(score_frame, text="PUNTUACIÓN", bg="#08151A", fg="#E6F7F6",
+                font=self.big_font).pack(pady=6)
 
-        # Cargar iconos para los jugadores
         icons_path = os.path.join(base_path, "assets", "icons")
 
         try:
-            self.icon_computer = ImageTk.PhotoImage(Image.open(os.path.join(icons_path, "robot.png")).resize((20, 20)))
-            self.icon_player = ImageTk.PhotoImage(Image.open(os.path.join(icons_path, "user.png")).resize((20, 20)))
+            self.icon_computer = ImageTk.PhotoImage(Image.open(os.path.join(icons_path, "robot.png")).resize((22, 22)))
+            self.icon_player = ImageTk.PhotoImage(Image.open(os.path.join(icons_path, "user.png")).resize((22, 22)))
             icons_loaded = True
         except Exception:
             icons_loaded = False
 
         # Computadora
-        computer_frame = tk.Frame(score_frame, bg="#1a3a42", relief="raised", borderwidth=2)
-        computer_frame.pack(fill="x", pady=5, padx=10)
+        computer_frame = tk.Frame(score_frame, bg="#0f3b3e", relief="flat", borderwidth=0)
+        computer_frame.pack(fill="x", pady=6, padx=8)
 
-        computer_header = tk.Frame(computer_frame, bg="#1a3a42")
-        computer_header.pack(pady=2)
+        computer_header = tk.Frame(computer_frame, bg="#0f3b3e")
+        computer_header.pack(fill="x", pady=2)
 
         if icons_loaded:
-            tk.Label(computer_header, image=self.icon_computer, bg="#1a3a42").pack(side="left", padx=5)
+            tk.Label(computer_header, image=self.icon_computer, bg="#0f3b3e").pack(side="left", padx=6)
 
-        tk.Label(computer_header, text="Computadora", bg="#1a3a42", fg="#00ced1",
-                font=("TkDefaultFont", 11, "bold")).pack(side="left")
+        tk.Label(computer_header, text="Computadora", bg="#0f3b3e", fg="#7FE3D7",
+                font=self.base_font).pack(side="left")
 
-        self.computer_score_label = tk.Label(computer_frame, text="0", bg="#1a3a42",
-                                             fg="white", font=("TkDefaultFont", 20, "bold"))
-        self.computer_score_label.pack(pady=5)
+        self.computer_score_label = tk.Label(computer_frame, text="0", bg="#0f3b3e",
+                                             fg="#E6F7F6", font=self.big_font)
+        self.computer_score_label.pack(pady=6)
 
         # Jugador
-        player_frame = tk.Frame(score_frame, bg="#1a3a42", relief="raised", borderwidth=2)
-        player_frame.pack(fill="x", pady=5, padx=10)
+        player_frame = tk.Frame(score_frame, bg="#0f3b3e", relief="flat", borderwidth=0)
+        player_frame.pack(fill="x", pady=6, padx=8)
 
-        player_header = tk.Frame(player_frame, bg="#1a3a42")
-        player_header.pack(pady=2)
+        player_header = tk.Frame(player_frame, bg="#0f3b3e")
+        player_header.pack(fill="x", pady=2)
 
         if icons_loaded:
-            tk.Label(player_header, image=self.icon_player, bg="#1a3a42").pack(side="left", padx=5)
+            tk.Label(player_header, image=self.icon_player, bg="#0f3b3e").pack(side="left", padx=6)
 
-        tk.Label(player_header, text="Jugador", bg="#1a3a42", fg="#ffc300",
-                font=("TkDefaultFont", 11, "bold")).pack(side="left")
+        tk.Label(player_header, text="Jugador", bg="#0f3b3e", fg="#FFC857",
+                font=self.base_font).pack(side="left")
 
-        self.player_score_label = tk.Label(player_frame, text="0", bg="#1a3a42",
-                                           fg="white", font=("TkDefaultFont", 20, "bold"))
-        self.player_score_label.pack(pady=5)
+        self.player_score_label = tk.Label(player_frame, text="0", bg="#0f3b3e",
+                                           fg="#E6F7F6", font=self.big_font)
+        self.player_score_label.pack(pady=6)
 
-        tk.Button(
-            left_frame,
-            text="REINICIAR",
-            bg="#ffc300",
-            fg="white",
-            highlightbackground="#fffa85",
-            relief="flat",
-            font=("TkDefaultFont", 14, "bold"),
-            activebackground="#fffcc5",
-            activeforeground="#ffc300",
-            command=lambda: [controller.music_player.play_sound("click"), controller.reset_game()],
-            cursor="hand2"
-        ).pack(pady=5, padx=10, fill="x")
+        def make_round_button(parent, text, bg_color, fg_color, command, font=None):
+            font = font or self.base_font
+            canvas = tk.Canvas(parent, height=44, bg=parent.cget("bg"), highlightthickness=0)
+            def draw_rect(event=None):
+                w = canvas.winfo_width() or 200
+                h = canvas.winfo_height() or 44
+                radius = 10
+                canvas.delete("all")
+                x0, y0, x1, y1 = 4, 4, w-4, h-4
+                canvas.create_arc(x0, y0, x0+2*radius, y0+2*radius, start=90, extent=90, fill=bg_color, outline=bg_color)
+                canvas.create_arc(x1-2*radius, y0, x1, y0+2*radius, start=0, extent=90, fill=bg_color, outline=bg_color)
+                canvas.create_arc(x0, y1-2*radius, x0+2*radius, y1, start=180, extent=90, fill=bg_color, outline=bg_color)
+                canvas.create_arc(x1-2*radius, y1-2*radius, x1, y1, start=270, extent=90, fill=bg_color, outline=bg_color)
+                canvas.create_rectangle(x0+radius, y0, x1-radius, y1, fill=bg_color, outline=bg_color)
+                canvas.create_rectangle(x0, y0+radius, x1, y1-radius, fill=bg_color, outline=bg_color)
+                canvas.create_text(w//2, h//2, text=text, fill=fg_color, font=font)
+            canvas.bind("<Configure>", draw_rect)
 
-        tk.Button(
-            left_frame,
-            text="MENÚ PRINCIPAL",
-            bg="#00ced1",
-            fg="white",
-            highlightbackground="#8efff9",
-            relief="flat",
-            font=("TkDefaultFont", 12, "bold"),
-            activebackground="#c6fffb",
-            activeforeground="#00ced1",
-            command=lambda: [controller.music_player.play_sound("click"), controller.show_view("home")],
-            cursor="hand2"
-        ).pack(pady=5, padx=10, fill="x")
+            def on_enter(e):
+                canvas.configure(cursor="hand2")
+                draw_rect()
 
-        tk.Button(
-            left_frame,
-            text="SALIR",
-            bg="#d63031",
-            fg="white",
-            highlightbackground="#fccccc",
-            relief="flat",
-            font=("TkDefaultFont", 14, "bold"),
-            activebackground="#fde3e3",
-            activeforeground="#d63031",
-            command=self.master.destroy,
-            cursor="hand2"
-        ).pack(pady=5, padx=10, fill="x")
+            def on_leave(e):
+                canvas.configure(cursor="")
+                draw_rect()
+
+            canvas.bind("<Enter>", on_enter)
+            canvas.bind("<Leave>", on_leave)
+
+            def on_click(e):
+                try:
+                    command()
+                except Exception:
+                    # si command es una lista/tuple (lambda de varios), intentar ejecutar element-wise
+                    try:
+                        if isinstance(command, (list, tuple)):
+                            for c in command:
+                                c()
+                    except Exception:
+                        pass
+            canvas.bind("<Button-1>", on_click)
+            return canvas
+
+        btn_frame = tk.Frame(left_frame, bg="#08151A")
+        btn_frame.pack(pady=8, padx=10, fill="x")
+
+        restart_cmd = lambda: [controller.music_player.play_sound("click"), controller.reset_game()]
+        menu_cmd = lambda: [controller.music_player.play_sound("click"), controller.show_view("home")]
+        exit_cmd = lambda: self.master.destroy
+
+        btn1 = make_round_button(btn_frame, "REINICIAR", "#FFC857", "#08151A", restart_cmd, font=("Segoe UI",12,"bold"))
+        btn1.pack(fill="x", pady=6)
+
+        btn2 = make_round_button(btn_frame, "MENÚ PRINCIPAL", "#7FE3D7", "#08151A", menu_cmd, font=("Segoe UI",11,"bold"))
+        btn2.pack(fill="x", pady=6)
+
+        btn3 = make_round_button(btn_frame, "SALIR", "#D64545", "#FFFFFF", exit_cmd, font=("Segoe UI",12,"bold"))
+        btn3.pack(fill="x", pady=6)
 
         human_path = os.path.join(base_path, "assets", "human.png")
         machine_path = os.path.join(base_path, "assets", "machine.png")
 
         try:
-            img_human = Image.open(human_path)
-            img_machine = Image.open(machine_path)
+            img_human = Image.open(human_path).resize((36,36), Image.LANCZOS)
+            img_machine = Image.open(machine_path).resize((36,36), Image.LANCZOS)
             self.human_img = ImageTk.PhotoImage(img_human)
             self.machine_img = ImageTk.PhotoImage(img_machine)
         except Exception:
@@ -261,7 +282,7 @@ class GameView(tk.Frame):
         self.update_coordinates()
         self.update_level_label()
 
- 
+        # Si la máquina empieza, disparar su turno con bloqueo y pequeña pausa
         if self.match._turn == Turn.COMPUTER:
             self._show_thinking(True)
             self.after(700, self._trigger_computer_move)
@@ -319,7 +340,7 @@ class GameView(tk.Frame):
 
     # ------------------------------ Game Over ------------------------------
     def show_game_over(self):
-        """Muestra la pantalla de fin de juego"""
+        """Muestra la pantalla de fin del juego con íconos y colores"""
         WIDTH = 600
         HEIGHT = 500
         try:
@@ -338,7 +359,7 @@ class GameView(tk.Frame):
         game_over_window = tk.Toplevel(self.master)
         game_over_window.title("Fin del Juego")
         game_over_window.geometry(f"{WIDTH}x{HEIGHT}")
-        game_over_window.configure(bg="#0B1F25")
+        game_over_window.configure(bg="#08151A")
         game_over_window.transient(self.master)
 
         game_over_window.update_idletasks()
@@ -367,7 +388,7 @@ class GameView(tk.Frame):
                 color = "#ffc300"
 
             icon_photo = ImageTk.PhotoImage(icon_img)
-            icon_label = tk.Label(game_over_window, image=icon_photo, bg="#0B1F25")
+            icon_label = tk.Label(game_over_window, image=icon_photo, bg="#08151A")
             icon_label.image = icon_photo
             icon_label.pack(pady=20)
         except Exception:
@@ -387,42 +408,42 @@ class GameView(tk.Frame):
         tk.Label(
             game_over_window,
             text=title,
-            bg="#0B1F25",
+            bg="#08151A",
             fg=color,
-            font=("TkDefaultFont", 28, "bold")
-        ).pack(pady=10)
+            font=("Segoe UI", 28, "bold")
+        ).pack(pady=6)
 
         tk.Label(
             game_over_window,
             text=message,
-            bg="#0B1F25",
-            fg="white",
-            font=("TkDefaultFont", 14),
+            bg="#08151A",
+            fg="#E6F7F6",
+            font=("Segoe UI", 13),
             justify="center"
-        ).pack(pady=10)
+        ).pack(pady=8)
 
-        score_frame = tk.Frame(game_over_window, bg="#1a3a42", relief="raised", borderwidth=3)
-        score_frame.pack(pady=20, padx=40, fill="x")
+        score_frame = tk.Frame(game_over_window, bg="#0f3b3e", relief="raised", borderwidth=3)
+        score_frame.pack(pady=14, padx=40, fill="x")
 
         tk.Label(
             score_frame,
             text="PUNTUACIÓN FINAL",
-            bg="#1a3a42",
-            fg="white",
-            font=("TkDefaultFont", 12, "bold")
+            bg="#0f3b3e",
+            fg="#E6F7F6",
+            font=("Segoe UI", 12, "bold")
         ).pack(pady=10)
 
         scores_text = f"Computadora: {self.match._computer_points}  |  Jugador: {self.match._player_points}"
         tk.Label(
             score_frame,
             text=scores_text,
-            bg="#1a3a42",
-            fg="white",
-            font=("TkDefaultFont", 14, "bold")
+            bg="#0f3b3e",
+            fg="#E6F7F6",
+            font=("Segoe UI", 14, "bold")
         ).pack(pady=10)
 
-        button_frame = tk.Frame(game_over_window, bg="#0B1F25")
-        button_frame.pack(pady=25)
+        button_frame = tk.Frame(game_over_window, bg="#08151A")
+        button_frame.pack(pady=18)
 
         def on_play_again():
             try:
@@ -451,10 +472,10 @@ class GameView(tk.Frame):
         tk.Button(
             button_frame,
             text="JUGAR DE NUEVO",
-            bg="#ffc300",
-            fg="white",
+            bg="#FFC857",
+            fg="#08151A",
             relief="flat",
-            font=("TkDefaultFont", 12, "bold"),
+            font=("Segoe UI", 12, "bold"),
             width=15,
             command=on_play_again,
             cursor="hand2"
@@ -463,10 +484,10 @@ class GameView(tk.Frame):
         tk.Button(
             button_frame,
             text="MENÚ PRINCIPAL",
-            bg="#00ced1",
-            fg="white",
+            bg="#7FE3D7",
+            fg="#08151A",
             relief="flat",
-            font=("TkDefaultFont", 12, "bold"),
+            font=("Segoe UI", 12, "bold"),
             width=15,
             command=on_menu,
             cursor="hand2"
@@ -493,52 +514,59 @@ class GameView(tk.Frame):
         else:
             self.valid_moves = []
 
+        light_cell = "#F2E8DF"
+        dark_cell = "#D9CFC6"
+        special_pos = "#00a36c"
+        special_neg = "#b22222"
+        destroyed_bg = "#121212"
+
         for i, row in enumerate(board):
             for j, cell in enumerate(row):
                 text = ""
                 image = None
-                bg = "#FFF0DD"
-                fg = "white"
+                # alternar colores tipo tablero
+                bg = light_cell if (i + j) % 2 == 0 else dark_cell
+                fg = "#1b1b1b"
 
                 if cell.type == CellType.EMPTY:
-                    bg = "#FFF0DD"
+                    pass
                 elif cell.type == CellType.COMPUTER:
                     image = self.machine_img if self.machine_img else None
                     text = "C" if not self.machine_img else ""
-                    bg = "#FFF0DD"
                 elif cell.type == CellType.PLAYER:
                     image = self.human_img if self.human_img else None
                     text = "J" if not self.human_img else ""
-                    bg = "#FFF0DD"
                 elif cell.type == CellType.SPECIAL:
                     text = f"+{cell.value}" if cell.value > 0 else str(cell.value)
                     if cell.value < 0:
-                        bg = "#b22222"
+                        bg = special_neg
+                        fg = "white"
                     elif cell.value > 0:
-                        bg = "#00a36c"
+                        bg = special_pos
+                        fg = "white"
                     else:
                         bg = "#e6e6e6"
                 elif cell.type == CellType.DESTROYED:
-                    bg = "black"
+                    bg = destroyed_bg
                     text = "X"
                     fg = "white"
 
                 label = tk.Label(
                     self.board_frame,
                     text=text,
-                    font=("TkDefaultFont", 14, "bold"),
+                    font=("Segoe UI", 12, "bold"),
                     fg=fg,
                     image=image,
                     width=4,
                     height=2,
                     bg=bg,
-                    borderwidth=2,
+                    borderwidth=1,
                     highlightbackground="#8C442B",
                     relief="raised",
                 )
 
                 label.image = image
-                label.grid(row=i, column=j, sticky="nsew")
+                label.grid(row=i, column=j, sticky="nsew", padx=2, pady=2)
 
                 label.original_bg = bg
                 self.hover_labels[(i, j)] = label
@@ -569,13 +597,19 @@ class GameView(tk.Frame):
         for path_pos in self.current_hover_path:
             label = self.hover_labels.get(path_pos)
             if label:
-                label.configure(bg="#90EE90", relief="sunken")
+                try:
+                    label.configure(bg="#7CFC9A", relief="sunken")
+                except Exception:
+                    pass
 
     def on_hover_leave(self, pos):
         for path_pos in self.current_hover_path:
             label = self.hover_labels.get(path_pos)
             if label and hasattr(label, 'original_bg'):
-                label.configure(bg=label.original_bg, relief="raised")
+                try:
+                    label.configure(bg=label.original_bg, relief="raised")
+                except Exception:
+                    pass
         self.current_hover_path = []
 
     def on_cell_click(self, pos):
