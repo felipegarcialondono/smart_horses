@@ -12,7 +12,7 @@ class Controller:
     def __init__(self):
         self.root = tk.Tk() 
         self.root.title("Smart Horses")
-        self.root.geometry("1000x700")
+        self.root.geometry("1400x900")
         self.root.configure(bg="#0B1F25")
 
         self.model = None
