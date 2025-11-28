@@ -66,18 +66,29 @@ class HomeView(tk.Frame):
             borderwidth=0,
             highlightthickness=0
         )
-        start_btn.pack(pady=(10, 25))
+        start_btn.pack(pady=(15, 25))
         
-        description_frame = tk.Frame(main_content_frame, bg="#1a3a42", relief="raised", borderwidth=2)
+        description_frame = tk.Frame(main_content_frame, bg="#1a3a42", relief="flat", borderwidth=0)
         description_frame.pack(pady=20, padx=40, fill="x")
 
+        # Título con línea decorativa
+        title_container = tk.Frame(description_frame, bg="#1a3a42")
+        title_container.pack(pady=(15, 5))
+
         tk.Label(
-            description_frame,
+            title_container,
             text="Smart Horses",
             bg="#1a3a42",
             fg="#ffc300",
             font=self.FONT_TITLE
-        ).pack(pady=10)
+        ).pack()
+
+        tk.Frame(
+            title_container,
+            bg="#ffc300",
+            height=2,
+            width=180
+        ).pack(pady=(8, 0))
 
         tk.Label(
             description_frame,
@@ -86,7 +97,7 @@ class HomeView(tk.Frame):
             fg="white",
             font=self.FONT_BASE,
             justify="center"
-        ).pack(pady=10, padx=20)
+        ).pack(pady=(15, 15), padx=20)
 
        
 
@@ -125,26 +136,39 @@ class HomeView(tk.Frame):
         instructions_btn.bind("<Enter>", on_enter_inst)
         instructions_btn.bind("<Leave>", on_leave_inst)
 
-        # Control de volumen
-        volume_frame = tk.Frame(main_content_frame, bg="#0B1F25")
-        volume_frame.pack(pady=10)
+        # Control de volumen mejorado
+        volume_frame = tk.Frame(main_content_frame, bg="#1a3a42", relief="flat", borderwidth=1)
+        volume_frame.pack(pady=15, padx=40, fill="x")
 
-        tk.Label(volume_frame, text="🔊 Volumen:", bg="#0B1F25", fg="white",
-                font=("Calibri", 10)).pack()
+        volume_inner = tk.Frame(volume_frame, bg="#1a3a42")
+        volume_inner.pack(pady=12, padx=15)
+
+        volume_label = tk.Label(
+            volume_inner, 
+            text="🔊 Volumen", 
+            bg="#1a3a42", 
+            fg="#ffc300",
+            font=("Calibri", 11, "bold")
+        )
+        volume_label.pack()
 
         volume_slider = tk.Scale(
-            volume_frame,
+            volume_inner,
             from_=0,
             to=100,
             orient="horizontal",
             bg="#1a3a42",
             fg="white",
             highlightthickness=0,
-            length=200,
+            troughcolor="#0B1F25",
+            activebackground="#ffc300",
+            length=220,
+            width=15,
+            sliderrelief="flat",
             command=lambda v: controller.music_player.set_volume(int(v) / 100)
         )
         volume_slider.set(30)
-        volume_slider.pack()
+        volume_slider.pack(pady=(8, 0))
 
         exit_btn = tk.Button(
             main_content_frame,
@@ -161,7 +185,7 @@ class HomeView(tk.Frame):
             borderwidth=0,
             highlightthickness=0
         )
-        exit_btn.pack(pady=15)
+        exit_btn.pack(pady=(10, 20))
 
         def on_enter_exit(e):
             exit_btn.config(bg="#c02a2b")

@@ -1,5 +1,5 @@
-ROWS = 10
-COLS = 10
+ROWS = 8
+COLS = 8
 
 BOARD_SIZE = 750
 

@@ -569,11 +569,11 @@ class GameView(tk.Frame):
                 label = tk.Label(
                     self.board_frame,
                     text=text,
-                    font=("Segoe UI", 12, "bold"),
+                    font=("Segoe UI", 10, "bold"),
                     fg=fg,
                     image=image,
-                    width=4,
-                    height=2,
+                    width=3,
+                    height=1,
                     bg=bg,
                     borderwidth=1,
                     highlightbackground="#8C442B",
@@ -581,7 +581,7 @@ class GameView(tk.Frame):
                 )
 
                 label.image = image
-                label.grid(row=i, column=j, sticky="nsew", padx=2, pady=2)
+                label.grid(row=i, column=j, sticky="nsew", padx=1, pady=1)
 
                 label.original_bg = bg
                 self.hover_labels[(i, j)] = label

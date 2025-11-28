@@ -12,7 +12,7 @@ class Controller:
     def __init__(self):
         self.root = tk.Tk() 
         self.root.title("Smart Horses")
-        self.root.geometry("1000x700")
+        self.root.geometry("1400x900")
         self.root.configure(bg="#0B1F25")
 
         self.model = None
@@ -46,17 +46,23 @@ class Controller:
 
     def start_game(self, difficulty_str):
         """Inicia el juego con la dificultad seleccionada"""
+        print(f"🎯 [CONTROLLER] start_game llamado con difficulty_str: '{difficulty_str}' (tipo: {type(difficulty_str).__name__})")
+        
         # Convertir string a constante
         if difficulty_str == "BEGGINER":
             self.difficulty = BEGGINER
+            print(f"✅ [CONTROLLER] Dificultad asignada: BEGGINER (valor: {BEGGINER})")
         elif difficulty_str == "AMATEUR":
             self.difficulty = AMATEUR
+            print(f"✅ [CONTROLLER] Dificultad asignada: AMATEUR (valor: {AMATEUR})")
         else:
             self.difficulty = EXPERT
+            print(f"✅ [CONTROLLER] Dificultad asignada: EXPERT (valor: {EXPERT})")
 
         # Crear nuevo modelo y máquina
         self.model = Match()
         self.machine = Machine(difficulty=self.difficulty)
+        print(f"🤖 [CONTROLLER] Máquina creada con dificultad: {self.difficulty} (max_depth: {self.machine.max_depth})")
 
         # Si ya existe la vista de juego, destruirla primero
         if "game" in self.views:
