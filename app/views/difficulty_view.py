@@ -123,10 +123,6 @@ class DifficultyView(tk.Frame):
             borderwidth=0
         )
         inner_frame.pack(fill="both", expand=True, padx=2, pady=2)
-        
-        # Guardar valores originales para el efecto hover
-        original_padx = 2
-        original_pady = 2
 
         # Contenido de la tarjeta
         content_frame = tk.Frame(inner_frame, bg="#1a3a42")
@@ -205,29 +201,24 @@ class DifficultyView(tk.Frame):
         card_border_color = diff_info["color"]
         level = diff_info["level"]
 
-        # Efecto hover con escalado visual sin afectar el layout
-        def on_enter(e, button=btn, hover_color=btn_hover_color, card=inner_frame, inner=inner_frame, opx=original_padx, opy=original_pady):
+        # Efecto hover simple - solo cambio de color sin afectar el layout
+        def on_enter(e, button=btn, hover_color=btn_hover_color, card=inner_frame):
             button.config(bg=hover_color)
             card.config(bg=hover_color)
-            # Efecto de escalado: reducir padding interno para que el borde se vea más grueso
-            # Esto crea la ilusión de expansión sin cambiar el espacio ocupado en el grid
-            inner.pack_configure(padx=0, pady=0)
 
-        def on_leave(e, button=btn, normal_color=btn_color, card=inner_frame, border_color=card_border_color, inner=inner_frame, opx=original_padx, opy=original_pady):
+        def on_leave(e, button=btn, normal_color=btn_color, card=inner_frame, border_color=card_border_color):
             button.config(bg=normal_color)
             card.config(bg=border_color)
-            # Restaurar padding original
-            inner.pack_configure(padx=opx, pady=opy)
 
         # Hover en toda la tarjeta - usando default parameters en los lambdas para capturar valores
-        card_frame.bind("<Enter>", lambda e, b=btn, h=btn_hover_color, c=inner_frame, i=inner_frame, opx=original_padx, opy=original_pady: on_enter(e, b, h, c, i, opx, opy))
-        card_frame.bind("<Leave>", lambda e, b=btn, n=btn_color, c=inner_frame, bc=card_border_color, i=inner_frame, opx=original_padx, opy=original_pady: on_leave(e, b, n, c, bc, i, opx, opy))
-        inner_frame.bind("<Enter>", lambda e, b=btn, h=btn_hover_color, c=inner_frame, i=inner_frame, opx=original_padx, opy=original_pady: on_enter(e, b, h, c, i, opx, opy))
-        inner_frame.bind("<Leave>", lambda e, b=btn, n=btn_color, c=inner_frame, bc=card_border_color, i=inner_frame, opx=original_padx, opy=original_pady: on_leave(e, b, n, c, bc, i, opx, opy))
-        content_frame.bind("<Enter>", lambda e, b=btn, h=btn_hover_color, c=inner_frame, i=inner_frame, opx=original_padx, opy=original_pady: on_enter(e, b, h, c, i, opx, opy))
-        content_frame.bind("<Leave>", lambda e, b=btn, n=btn_color, c=inner_frame, bc=card_border_color, i=inner_frame, opx=original_padx, opy=original_pady: on_leave(e, b, n, c, bc, i, opx, opy))
-        btn.bind("<Enter>", lambda e, b=btn, h=btn_hover_color, c=inner_frame, i=inner_frame, opx=original_padx, opy=original_pady: on_enter(e, b, h, c, i, opx, opy))
-        btn.bind("<Leave>", lambda e, b=btn, n=btn_color, c=inner_frame, bc=card_border_color, i=inner_frame, opx=original_padx, opy=original_pady: on_leave(e, b, n, c, bc, i, opx, opy))
+        card_frame.bind("<Enter>", lambda e, b=btn, h=btn_hover_color, c=inner_frame: on_enter(e, b, h, c))
+        card_frame.bind("<Leave>", lambda e, b=btn, n=btn_color, c=inner_frame, bc=card_border_color: on_leave(e, b, n, c, bc))
+        inner_frame.bind("<Enter>", lambda e, b=btn, h=btn_hover_color, c=inner_frame: on_enter(e, b, h, c))
+        inner_frame.bind("<Leave>", lambda e, b=btn, n=btn_color, c=inner_frame, bc=card_border_color: on_leave(e, b, n, c, bc))
+        content_frame.bind("<Enter>", lambda e, b=btn, h=btn_hover_color, c=inner_frame: on_enter(e, b, h, c))
+        content_frame.bind("<Leave>", lambda e, b=btn, n=btn_color, c=inner_frame, bc=card_border_color: on_leave(e, b, n, c, bc))
+        btn.bind("<Enter>", lambda e, b=btn, h=btn_hover_color, c=inner_frame: on_enter(e, b, h, c))
+        btn.bind("<Leave>", lambda e, b=btn, n=btn_color, c=inner_frame, bc=card_border_color: on_leave(e, b, n, c, bc))
         
         # Click en toda la tarjeta también activa el botón
         def on_card_click(e, lvl=level):
