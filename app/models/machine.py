@@ -13,7 +13,7 @@ class Machine:
         else:
            self.max_depth = 6
         
-        self.game = None  # ✅ Inicializar como None
+        self.game = None  # Inicializar como None
 
     def _build_root(self, match):
         """Para construir el nodo raiz a partir del Match, se toma la máquina como MAX"""
@@ -38,7 +38,7 @@ class Machine:
     def choose_game(self, match):
         """devuelve la posicion (i,j) para la maquina, si no hay mov legales devuelve None"""
         root = self._build_root(match)
-        self.game = Game(root.state)  # ✅ Crear Game con el estado inicial
+        self.game = Game(root.state)  # Crear Game con el estado inicial
 
         print(f"🎮 Posición actual computadora: {root.state.pos_max}")
         print(f"🎮 Posición actual jugador: {root.state.pos_min}")
@@ -64,7 +64,7 @@ class Machine:
     def _max_value(self, node: Node, alpha, beta):
         # Condición de corte por profundidad o estado terminal
         if node.depth >= self.max_depth or self.game.is_terminal(node):
-            return self.game._utility(node.state)  # ✅ Pasar node.state en lugar de node
+            return self.game._utility(node.state)  # Pasar node.state en lugar de node
         
         v = -math.inf
         for child in self.game.operators(node):
@@ -77,7 +77,7 @@ class Machine:
     def _min_value(self, node: Node, alpha, beta):
         # Condición de corte por profundidad o estado terminal
         if node.depth >= self.max_depth or self.game.is_terminal(node):
-            return self.game._utility(node.state)  # ✅ Pasar node.state en lugar de node
+            return self.game._utility(node.state)  # Pasar node.state en lugar de node
         
         v = math.inf
         for child in self.game.operators(node):

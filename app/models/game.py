@@ -23,12 +23,12 @@ class Game():
         for (di, dj) in KNIGHT_MOVES:
             new_i, new_j = i + di, j + dj
 
-            # ✅ Verificar que la nueva posición no esté destruida ni ocupada por algún jugador
+            # Verificar que la nueva posición no esté destruida ni ocupada por algún jugador
             if (0 <= new_i < ROWS and 
                 0 <= new_j < COLS and 
                 (new_i, new_j) not in destroyed_squares and
-                (new_i, new_j) != state.pos_max and  # ✅ No moverse a la posición del MAX
-                (new_i, new_j) != state.pos_min):    # ✅ No moverse a la posición del MIN
+                (new_i, new_j) != state.pos_max and  # No moverse a la posición del MAX
+                (new_i, new_j) != state.pos_min):    # No moverse a la posición del MIN
                 
                 new_pos = (new_i, new_j)
 

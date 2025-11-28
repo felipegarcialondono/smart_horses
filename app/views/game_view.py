@@ -631,6 +631,24 @@ class GameView(tk.Frame):
         if self.input_locked:
             return
 
+        # Verificar si el jugador puede moverse antes de permitir el click
+        if not self.match.can_current_player_move():
+            # Si no puede moverse, saltar turno y aplicar penalización
+            self.match.skip_turn_if_no_moves()
+            self.draw_board()
+            self.update_scores()
+            self.update_turn_label()
+            self.update_coordinates()
+            
+            # Verificar si el juego terminó después de saltar el turno
+            if self.match.check_game_over():
+                self.after(500, self.show_game_over)
+                return
+            
+            # Continuar con el siguiente turno (computadora) automáticamente
+            self._check_and_continue_turn()
+            return
+
         print(f"Jugador intenta moverse a: {pos}")
 
         cell = self.match.board[pos[0]][pos[1]]
@@ -677,6 +695,28 @@ class GameView(tk.Frame):
             self.update_turn_label()
             return
 
+        # Verificar si la máquina puede moverse antes de intentar
+        if not self.match.can_current_player_move():
+            # Si no puede moverse, saltar turno y aplicar penalización
+            print("⚠️ La computadora no tiene movimientos disponibles")
+            self.match.skip_turn_if_no_moves()
+            
+            def skip_turn():
+                self.draw_board()
+                self.update_scores()
+                self.update_turn_label()
+                self.update_coordinates()
+                
+                # Verificar si el juego terminó después de saltar el turno
+                if self.match.check_game_over():
+                    self.after(500, self.show_game_over)
+                else:
+                    # El turno ahora es del jugador, verificar si puede moverse
+                    self._check_and_continue_turn()
+            
+            self.after(0, skip_turn)
+            return
+
         move = self.controller.machine.choose_game(self.match)
 
         def apply_move():
@@ -703,16 +743,61 @@ class GameView(tk.Frame):
 
                 if self.match.check_game_over():
                     self.after(500, self.show_game_over)
+                    return
+
+                self.update_coordinates()
+                self.update_turn_label()
+
+                # Después del movimiento de la máquina, verificar si el jugador puede moverse
+                # Si no puede, saltar su turno y continuar con la máquina
+                self._check_and_continue_turn()
             else:
-                print("La computadora no tiene movimientos disponibles")
+                # No debería llegar aquí si verificamos antes, pero por seguridad
+                print("⚠️ La computadora no tiene movimientos disponibles")
+                if self.match.skip_turn_if_no_moves():
+                    self.draw_board()
+                    self.update_scores()
+                
                 if self.match.check_game_over():
                     self.after(500, self.show_game_over)
-
-            self.input_locked = False
-            self._show_thinking(False)
-            self.update_turn_label()
-            self.update_coordinates()
-            self.draw_board()
-
+                else:
+                    self._check_and_continue_turn()
 
         self.after(0, apply_move)
+    
+    def _check_and_continue_turn(self):
+        """Verifica si el jugador actual puede moverse, y si no, salta el turno y continúa"""
+        # Verificar si el jugador actual puede moverse
+        if not self.match.can_current_player_move():
+            # Saltar turno y aplicar penalización
+            self.match.skip_turn_if_no_moves()
+            self.draw_board()
+            self.update_scores()
+            self.update_turn_label()
+            self.update_coordinates()
+            
+            # Verificar si el juego terminó
+            if self.match.check_game_over():
+                self.after(500, self.show_game_over)
+                return
+            
+            # Si ahora es turno de la máquina, continuar automáticamente
+            if self.match._turn == Turn.COMPUTER:
+                self._show_thinking(True)
+                self.after(700, lambda: [self._trigger_computer_move()])
+                return
+            # Si es turno del jugador, desbloquear input
+            else:
+                self.input_locked = False
+                self._show_thinking(False)
+                return
+        
+        # Si el jugador actual puede moverse
+        if self.match._turn == Turn.PLAYER:
+            # Desbloquear input para que el jugador pueda jugar
+            self.input_locked = False
+            self._show_thinking(False)
+        else:
+            # Es turno de la máquina, continuar automáticamente
+            self._show_thinking(True)
+            self.after(700, lambda: [self._trigger_computer_move()])
