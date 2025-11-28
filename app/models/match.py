@@ -73,13 +73,23 @@ class Match():
         return False
 
     def check_game_over(self):
-        """Verifica si el juego ha terminado y aplica penalizaciones si es necesario"""
+        """Verifica si el juego ha terminado. El juego termina SOLO cuando AMBOS jugadores no pueden moverse."""
         computer_can_move = self._has_valid_moves(self._computer_pos)
         player_can_move = self._has_valid_moves(self._player_pos)
         
+        # El juego solo termina cuando AMBOS jugadores no pueden moverse
         if not computer_can_move and not player_can_move:
-            # Ambos sin movimientos - fin del juego
             self._game_over = True
+            
+            # Determinar quién se quedó sin movimientos primero para aplicar penalización
+            # Nota: esto debería haberse rastreado durante el juego, pero por simplicidad
+            # aplicaremos la lógica de penalización al final si es necesario
+            
+            # Si ambos terminaron al mismo tiempo, no hay penalización
+            # La penalización solo aplica si uno se quedó sin movimientos antes que el otro
+            # Por ahora, simplemente comparamos puntos sin penalización adicional
+            # ya que el juego ya terminó cuando ambos no pueden moverse
+            
             if self._computer_points > self._player_points:
                 self._winner = 'COMPUTER'
             elif self._player_points > self._computer_points:
@@ -88,32 +98,29 @@ class Match():
                 self._winner = 'TIE'
             return True
         
-        elif not computer_can_move and player_can_move:
-            # Solo computadora sin movimientos - penalización
-            self._computer_points -= 4
-            print("⚠️ Computadora sin movimientos - Penalización: -4 puntos")
-            self._game_over = True
-            if self._computer_points > self._player_points:
-                self._winner = 'COMPUTER'
-            elif self._player_points > self._computer_points:
-                self._winner = 'PLAYER'
+        # Si solo uno no puede moverse, el juego continúa (el otro sigue jugando)
+        return False
+    
+    def can_current_player_move(self):
+        """Verifica si el jugador actual puede realizar un movimiento"""
+        if self._turn == Turn.COMPUTER:
+            return self._has_valid_moves(self._computer_pos)
+        else:
+            return self._has_valid_moves(self._player_pos)
+    
+    def skip_turn_if_no_moves(self):
+        """Si el jugador actual no puede moverse, salta su turno y aplica penalización"""
+        if not self.can_current_player_move():
+            if self._turn == Turn.COMPUTER:
+                self._computer_points -= 4
+                print("⚠️ Computadora sin movimientos - Penalización: -4 puntos. Turno del jugador.")
             else:
-                self._winner = 'TIE'
+                self._player_points -= 4
+                print("⚠️ Jugador sin movimientos - Penalización: -4 puntos. Turno de la computadora.")
+            
+            # Cambiar turno para que el otro jugador continúe
+            self._turn = Turn.PLAYER if self._turn == Turn.COMPUTER else Turn.COMPUTER
             return True
-        
-        elif not player_can_move and computer_can_move:
-            # Solo jugador sin movimientos - penalización
-            self._player_points -= 4
-            print("⚠️ Jugador sin movimientos - Penalización: -4 puntos")
-            self._game_over = True
-            if self._computer_points > self._player_points:
-                self._winner = 'COMPUTER'
-            elif self._player_points > self._computer_points:
-                self._winner = 'PLAYER'
-            else:
-                self._winner = 'TIE'
-            return True
-        
         return False
 
     def play_turn(self, pos:tuple[int]):
